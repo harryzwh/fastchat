@@ -1,0 +1,29 @@
+###
+POST http://127.0.0.1:18000/v1/chat/completions
+Content-Type: application/json
+
+{
+  "model": "gemini-api",
+  "messages": [{"role": "user", "content": "用沁园春为词牌名写一首诗"}],
+  "stream": true
+}
+###
+POST http://127.0.0.1:21005/worker_generate_stream
+Content-Type: application/json
+
+{
+  "model": "qianfan-api",
+  "prompt": "你是一个聪明的助手，请根据用户的提示来完成任务\n### user: 用沁园春为词牌名写一首诗\n### assistant:",
+  "temperature": 0.7,
+  "logprobs": null,
+  "top_p": 1.0,
+  "top_k": -1,
+  "presence_penalty": 0.0,
+  "frequency_penalty": 0.0,
+  "max_new_tokens": 16310,
+  "echo": false,
+  "stop_token_ids": null,
+  "stop": [
+    "###"
+  ]
+}

@@ -4,7 +4,6 @@ import argparse
 import uuid
 import json
 
-from types import MethodType
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastchat.utils import build_logger
@@ -14,12 +13,16 @@ from api_model_worker import ApiModelWorker
 app = FastAPI()
 
 
-def get_llm(model_name):
-    if 'gemini' in model_name:
+def get_llm(register_api_endpoint_file):
+    api_endpoint_info = json.load(open(register_api_endpoint_file))
+    for k, v in api_endpoint_info['env'].items():
+        os.environ[k] = v
+
+    if 'gemini' in api_endpoint_info['api_type']:
         from langchain_google_genai import ChatGoogleGenerativeAI
-        os.environ["GOOGLE_API_KEY"] = "AIzaSyDGMxYJDddFGXlg_x3_RcxVpr-B3dqM7Eo"
+        # os.environ["GOOGLE_API_KEY"] = "AIzaSyDGMxYJDddFGXlg_x3_RcxVpr-B3dqM7Eo"
         llm = ChatGoogleGenerativeAI(
-            model="gemini-pro",
+            model=api_endpoint_info['model'],
             convert_system_message_to_human=True,
         )
 
@@ -29,15 +32,16 @@ def get_llm(model_name):
             finish_reason = chunk.response_metadata.get("finish_reason", None)
             return text, error_code, finish_reason
 
-        return llm, chunk_process
-    elif "qianfan" in model_name:
+        def error_process(error):
+            text = error
+            error_code = None
+            req_id = None
+            return text, error_code, req_id
+
+        return llm, chunk_process, error_process
+    elif "qianfan" in api_endpoint_info['api_type']:
         from langchain_community.llms import QianfanLLMEndpoint
-        API_Key = "HfrtUrTB7mgf7uhl8TO5IeRN"
-        Secret_Key = "ERS0tzGu11TcJGAl6NFv5FZN6HFXUofH"
-        os.environ["QIANFAN_AK"] = API_Key
-        os.environ["QIANFAN_SK"] = Secret_Key
-        os.environ["QIANFAN_BASE_URL"] = "https://aip.baidubce.com"
-        llm = QianfanLLMEndpoint(endpoint="yi_34b_chat", streaming=True, )
+        llm = QianfanLLMEndpoint(endpoint=api_endpoint_info['model'], streaming=True, )
 
         def chunk_process(chunk):
             text = chunk
@@ -45,9 +49,15 @@ def get_llm(model_name):
             finish_reason = None
             return text, error_code, finish_reason
 
-        return llm, chunk_process
+        def error_process(error):
+            text = error.error_msg
+            error_code = error.error_code
+            req_id = error.req_id
+            return text, error_code, req_id
+
+        return llm, chunk_process, error_process
     else:
-        raise Exception('{} is not implemented'.format(model_name))
+        raise Exception('API for {} is not implemented'.format(api_endpoint_info['api_type']))
 
 
 @app.post("/worker_generate_stream")
@@ -102,6 +112,7 @@ def create_api_worker():
     parser.add_argument(
         "--controller-address", type=str, default="http://localhost:21001"
     )
+    parser.add_argument("--model-name", type=str, required=True)
     parser.add_argument(
         "--limit-worker-concurrency",
         type=int,
@@ -122,6 +133,13 @@ def create_api_worker():
         default=False,
         help="Enable SSL. Requires OS Environment variables 'SSL_KEYFILE' and 'SSL_CERTFILE'.",
     )
+    parser.add_argument(
+        "--register-api-endpoint-file",
+        type=str,
+        help="Register API-based model endpoints from a JSON file",
+        default=r".\api_endpoints.json",
+        # required=True
+    )
     args = parser.parse_args()
     worker_id = str(uuid.uuid4())[:8]
     logger = build_logger("model_worker", f"model_worker_{worker_id}.log")
@@ -130,7 +148,7 @@ def create_api_worker():
         controller_addr=args.controller_address,
         worker_addr=args.worker_address,
         worker_id=worker_id,
-        model_names=['qianfan-api'],
+        model_names=[args.model_name],
         limit_worker_concurrency=args.limit_worker_concurrency,
         logger=logger,
         no_register=args.no_register,
@@ -139,9 +157,10 @@ def create_api_worker():
         seed=args.seed,
     )
 
-    llm, chunk_process = get_llm("qianfan-api")
+    llm, chunk_process, error_process = get_llm(args.register_api_endpoint_file)
     worker.llm = llm
     worker.chunk_process = chunk_process
+    worker.error_process = error_process
 
     return args, worker
 

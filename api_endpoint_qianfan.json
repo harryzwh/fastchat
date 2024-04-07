@@ -1,0 +1,9 @@
+{
+  "api_type": "qianfan",
+  "model": "yi_34b_chat",
+  "env": {
+    "QIANFAN_AK": "HfrtUrTB7mgf7uhl8TO5IeRN",
+    "QIANFAN_SK": "ERS0tzGu11TcJGAl6NFv5FZN6HFXUofH",
+    "QIANFAN_BASE_URL": "https://aip.baidubce.com"
+  }
+}

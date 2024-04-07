@@ -20,6 +20,17 @@ Content-Type: application/json
 }
 
 ###
+POST http://127.0.0.1:18000/v1/chat/completions
+Content-Type: application/json
+
+{
+  "model": "gemini-api",
+  "messages": [{"role": "user", "content": "用浣溪沙为词牌名写一首诗"}],
+  "stream": true,
+  "temperature":0.7
+}
+
+###
 #POST http://127.0.0.1:21005/worker_generate_stream
 #Content-Type: application/json
 #

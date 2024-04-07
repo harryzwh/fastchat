@@ -1,16 +1,14 @@
 import json
 import asyncio
 import requests
-from typing import List, Optional, Dict
-
+from typing import List, Optional
 from logging import Logger
 
-from fastchat.conversation import Conversation
 from fastchat.serve.base_model_worker import BaseModelWorker
-from fastapi import BackgroundTasks
-
 from fastchat.conversation import Conversation
 from fastchat import conversation as conv
+
+from fastapi import BackgroundTasks
 
 
 class ApiModelWorker(BaseModelWorker):
@@ -109,6 +107,10 @@ class ApiModelWorker(BaseModelWorker):
     def chunk_process(chunk):
         raise NotImplemented
 
+    @staticmethod
+    def error_process(error):
+        raise NotImplemented
+
     def generate_stream_gate(self, params):
         self.call_ct += 1
 
@@ -140,10 +142,11 @@ class ApiModelWorker(BaseModelWorker):
                 }
                 yield json.dumps(ret).encode() + b"\0"
         except Exception as e:
+            text, error_code, req_id = self.error_process(e)
             ret = {
-                "text": e,
-                # "error_code": e.error_code,
-                # "request_id": e.req_id,
+                "text": text,
+                "error_code": error_code,
+                "request_id": req_id,
             }
             yield json.dumps(ret).encode() + b"\0"
 

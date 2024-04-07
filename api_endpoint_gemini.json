@@ -1,0 +1,7 @@
+{
+  "api_type": "gemini",
+  "model": "gemini-pro",
+  "env": {
+    "GOOGLE_API_KEY": "AIzaSyDGMxYJDddFGXlg_x3_RcxVpr-B3dqM7Eo"
+  }
+}

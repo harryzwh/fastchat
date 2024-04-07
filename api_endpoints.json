@@ -1,9 +1,0 @@
-{
-  "gemini": {
-    "model_name": "gemini-pro",
-    "api_type": "gemini",
-    "_api_base": "https://api.openai.com/v1",
-    "api_key": "AIzaSyDGMxYJDddFGXlg_x3_RcxVpr-B3dqM7Eo",
-    "anony_only": false
-  }
-}

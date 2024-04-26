@@ -20,7 +20,6 @@ def get_llm(register_api_endpoint_file):
 
     if 'gemini' in api_endpoint_info['api_type']:
         from langchain_google_genai import ChatGoogleGenerativeAI
-        # os.environ["GOOGLE_API_KEY"] = "AIzaSyDGMxYJDddFGXlg_x3_RcxVpr-B3dqM7Eo"
         llm = ChatGoogleGenerativeAI(
             model=api_endpoint_info['model'],
             convert_system_message_to_human=True,
@@ -104,6 +103,11 @@ async def api_model_details(request: Request):
     return {"context_length": worker.context_len}
 
 
+@app.get("/healthcheck")
+async def api_healthcheck():
+    return "OK"
+
+
 def create_api_worker():
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", type=str, default="localhost")
@@ -143,6 +147,7 @@ def create_api_worker():
     args = parser.parse_args()
     worker_id = str(uuid.uuid4())[:8]
     logger = build_logger("model_worker", f"model_worker_{worker_id}.log")
+    logger.info(args)
 
     worker = ApiModelWorker(
         controller_addr=args.controller_address,

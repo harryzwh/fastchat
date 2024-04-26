@@ -20,7 +20,7 @@ Content-Type: application/json
 }
 
 ###
-POST http://127.0.0.1:18000/v1/chat/completions
+POST http://llm:18001/v1/chat/completions
 Content-Type: application/json
 
 {
